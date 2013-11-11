@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="ASCII"?>
+<anttasks:AntTask xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:anttasks="http://at.bestsolution.efxclipse.tooling.jdt/1.0" buildDirectory="${project}/build">
+  <deploy packagingFormat="all">
+    <application name="JMediaPlayer" mainclass="library.view.LibraryView" version="1.0.0"/>
+    <info vendor="BuildSolution"/>
+  </deploy>
+  <signjar/>
+</anttasks:AntTask>
