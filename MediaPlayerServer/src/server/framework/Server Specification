@@ -1,0 +1,392 @@
+Server has:
+1) IP
+2) Port Number
+3) Password(Optional, 50 bytes max)
+4) Admin Password, to recieve admin benefits(30 bytes max)
+5) A server name
+
+User logs in with a simple username(not saved, 20 chars max)
+-can chat normally
+-can transfer files to others
+-can access admin benefits by entering "admin password"
+	-can kick a user
+	-can ban a user
+	-can mute a user(allowing them to stay can listen/read, but not speak)
+	-can remove ban
+	-can remove mute
+
+	-this information is stored in database 
+		Server_Ban( varchar(50) IP )
+		Server_Mute( varchar(50) IP )
+		
+have similar client to ventrilo's, but with chat instead of voice		
+
+SERVER.ini
+serverName = Server1 <---must be provided
+serverPassword = 
+adminPassword = 
+port = 5376    < -- default
+multiLogin = true
+
+MAX_STRING_SIZE = 30
+-Any characters after the 30th get ignored, so
+"012345678901234567890123456789" is the same as
+"012345678901234567890123456789ABC"
+
+-variables are written in camelCase, but when read are turned uppercase
+to ignore case sensitivity.
+	-values ARE case sensitive, however
+-BOOLEANS: any value other than "true"(case insensitive) is equal to false
+
+initialization 
+initializer 
+
+MESSAGES:
+HEADER:
+SPAM LIMIT= 1,024 chars in a message at max
+char = 2 bytes in java(due to UNICODE over ASCII)
+byte = 1 byte, max value of 127
+char(8bytes):	4-char numeric string indicating type of message
+	
+					REGULAR CHAT MESSAGES		(0100 - 0199)
+						0100 - regular message from sender to all
+					
+					PRIVATE MESSAGES			(0200 - 0299)
+						0200 - private message sent from sender to receiver
+					
+					FILE TRANSFER MESSAGES		(0300 - 0399)
+						0300 - Transfer File
+					
+					ADMIN MESSAGES(for server)	(0800 - 0899)
+						0800 - log into admin
+						
+						0809 - punishment list request
+						0810 - user punish(KICK,MUTE,BAN)
+						0811 - remove punishment
+											
+					SERVER MESSAGES				(0900 - 0999)
+						#### - user login(no header sent, this is an expected
+								initial message and nothing else can be done
+								until it is responded to)
+						0905 - User-list
+						0906 - New users connected
+						0907 - User disconnected
+						
+						0970 - Kicked from server
+						0999 - Error
+						
+	
+	
+	REGULAR CHAT MESSAGES(100-199)
+	---------------------------------------------------------------------------
+	0100(regular):
+	int					size of sender name
+	string				sender username
+	int(4 bytes)		size of message
+	string(^ bytes) 	message to send
+	---------------------------------------------------------------------------
+	
+	
+	
+	
+	PRIVATE MESSAGES(200-299)
+	---------------------------------------------------------------------------
+	0200(private):
+	
+	FOR SERVER(from sender):
+	int(4 bytes)		size of receiver UserName		
+	string(^^ bytes)	UserName of receiver
+	int(4 bytes)		size of message
+	string(^ bytes)		message to send
+	
+	FOR CLIENT(receiving message from server):
+	int					size of receiver
+	string				receiver name
+	int(4 bytes)		size of message
+	string(^ bytes)		message 
+	---------------------------------------------------------------------------
+	
+	
+	
+	
+	
+	FILE TRANSFER MESSAGES(300-399)
+	
+	Transfer Stages:
+	1 - Initial Request From Sender
+	2 - Response to Request
+	3 - Data Transmission
+	4 - Transmission End
+	
+	Need(not for every message, but in general):
+	
+	string(20 bytes)	user name of receiver
+	string(20 bytes)	user name of sender
+	int(4 bytes)		size of file
+	int(4 bytes)		size of file name
+	string(^ bytes)		file name
+	
+	int(4 bytes)		transfer ID for current file(to distinguish between multiple files)
+	byte(1 bytes)		transfer STAGE #
+	int(4 bytes)		# of current data segment
+	int(4 bytes)		# of total data segments for file
+	int(4 bytes)		size of current data segment(# of bytes)
+	byte(4096)			file data segment(max size of 4096)
+	
+	byte(1)				1 or 0 indicating success/failure, done sending, etc
+	
+	***File Transfer ID is created after initial request from sender, but 
+	BEFORE sending of request to receiver.  Receiver responds to request with
+	the ID, and ALL transfer messages from this point on carry the ID with them
+	to ensure all necessary messages are associated with the proper file***
+	---------------------------------------------------------------------------
+	0300(file transfer): 
+	sender -> server
+	byte(1 bytes)		Transfer Stage( 1 ) <--REQUEST
+	int(4 bytes)		size of receiver username
+	string(^ bytes)		UserName of receiver
+	int(4 bytes)		size of filename
+	string(^ bytes)		file name
+	int(4 bytes)		size of file
+	
+	server -> receiver:
+	byte(1 bytes)		Transfer Stage( 1 ) <--REQUEST
+	int(4 bytes)		File Transfer ID (created by server after receiving request)
+	int(4 bytes) 		size of original sender Username
+	string(^^ bytes)	UserName of original sender
+	int(4 bytes)		size of filename
+	string(^ bytes)		file name
+	int(4 bytes)		size of file
+
+	receiver -> server:		
+	byte(1 bytes)		Transfer Stage( 2 )	<--RESPONSE
+	int(4 bytes)		file transfer ID
+	int(4 bytes) 		size of original sender Username
+	string(^^ bytes)	UserName of original sender
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	byte(1 byte)		1 = accept, 0 = decline
+		
+	server -> sender:
+	byte(1 bytes)		Transfer Stage( 2 )	<--RESPONSE
+	int(4 bytes)		file transfer ID
+	int(4 bytes) 		size of receiver Username
+	string(^^ bytes)	UserName of receiver
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	byte(1 byte)		1 = accept, 0 = decline
+			
+	sender -> server:
+	byte(1 bytes)		Transfer Stage( 3 )	<--DATA TRANSMISSION	
+	int(4 bytes)		file transfer ID
+	int(4 bytes)		size of receiver username
+	string(^ bytes)		UserName of receiver
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	int(4 bytes)		# of current data segment
+	int(4 bytes)		# of total data segments
+	int(4 bytes)		size of current data segment(# of bytes)
+	byte(4096)			data segment
+		
+	server -> receiver:
+	byte(1 bytes)		Transfer Stage( 3 )	<--DATA TRANSMISSION	
+	int(4 bytes)		file transfer ID
+	int(4 bytes)		size of sender username
+	string(^ bytes)		UserName of sender
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	int(4 bytes)		# of current data segment
+	int(4 bytes)		# of total data segments
+	int(4 bytes)		size of current data segment(# of bytes)
+	byte(4096)			data segment
+			
+	sender -> server:
+	byte(1 bytes)		Transfer Stage( 4 )	<--TRANSMISSION END	
+	int(4 bytes)		file transfer ID
+	int(4 bytes)		size of receiver username
+	string(^ bytes)		UserName of receiver
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	byte(1 byte)		1 indicating done sending
+		
+	server -> receiver:
+	byte(1 bytes)		Transfer Stage( 4 )	<--TRANSMISSION END	
+	int(4 bytes)		file transfer ID
+	int(4 bytes)		size of sender username
+	string(^ bytes)		UserName of sender
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	byte(1 byte)		1 indicating done sending, 0 = failure
+	
+	IF Failure on sending data, or error received mid transfer(ERROR stage),
+	then sender sends STAGE4_TransEND with FAILURE and both clients delete
+	data 	
+		
+	server -> sender:
+	byte(1 byte)		Transfer Stage( -1 ) <--ERROR
+	int(4 bytes)		file transfer ID
+	int(4 bytes)		size of filename
+	string(^ bytes)		filename
+	int(4 bytes)		message size
+	string(^bytes)		error message	
+	
+		-NOT NECESSARY, as using TCP anyway
+		/*
+		receiver responds with:
+		byte(1)				1 received all, or 0 not received all
+		if 'N'
+		int(4 bytes)		# of segments not received
+		int(4 bytes)		segment not recieved
+		int(4 bytes)		segment not recieved
+		.
+		.
+		*/
+	---------------------------------------------------------------------------
+	
+	
+	
+	
+	
+	ADMIN MESSAGES
+	
+	Punishment command codes:
+		char(4 bytes)
+		0001		KICK
+		0002		MUTE
+		0003		BAN
+	
+	---------------------------------------------------------------------------
+	0800(log into admin):
+	
+	sender -> server:
+	int						size of admin password
+	string					admin password
+	
+	server -> sender:
+	byte					1 success, 0 failure
+		(client can now highlight admin options, as they will now work when
+		sent to server)
+	
+	801(get saved punishment list):
+	just send the header to the server
+	
+	server -> sender:
+	int						num of users
+	per user:
+	int						size of user name
+	string					user name
+	int						size of IP
+	string					IP(IP.getHostAddress())
+	char(4)					punishment code
+	
+	
+	
+	0810(Punish user):
+	 
+	sender -> server
+	char(4 bytes)			punishment command code
+	byte					punishment direction(set or remove)
+	int						size of admin name
+	string					admin name
+	int						size of target name
+	string					name of target to punish
+	
+	server -> sender and target(all info back plus response, so that the response 
+			can be identified to an initial request)
+	char(4 bytes)			punishment command code
+	int						size of sender name
+	string					name of sender 
+	int						size of target name
+	string					name of target to punish
+		
+	byte					1 success, 0 failure
+
+
+	0811(RemovePunishment):
+	sender -> server: same as Punish User, but add
+	int						length of IP
+	string					IP.hostname as string
+	
+	- after the target's name in request(last bit of info)
+	- after the target's name, but before the response byte in response
+	---------------------------------------------------------------------------
+	
+	
+	
+	SERVER MESSAGES
+	---------------------------------------------------------------------------
+	####(User login): NO HEADER SENT, THIS IS AN EXPECTED FIRST MESSAGE
+	sender-> server:
+	int(4 bytes)			size of user name
+	string(^ bytes)			user name(30 chars max)
+	int(4 bytes)			size of server password
+	string(^ bytes)			server password(30 chars max)
+	
+	
+	0999(Server Error):
+	server -> sender:
+	int(4 bytes)			size of message
+	string(^ bytes)			error message
+	
+	0905(server, send user list) - to client only:
+	-send to user:
+	int						# of users
+	String[]				list of users
+		-int				size of name
+		-String				username
+	
+	0906(New User Connected) || 
+	0907(User disconnected):
+	-send to user:
+	int(4 bytes)			size of name
+	string					name of user
+	
+	---------------------------------------------------------------------------
+	
+	
+	
+	DATABASE:
+	
+	SERVER_PUNISHMENTS:
+	---------------------------------------------------------------------------
+	VARCHAR(150)			IP_ADD
+	VARCHAR(30)				USERNAME
+	CHAR(4)					PUNISHMENT
+	
+		PUNISHMENT_CODES:
+			4 character codes:
+			0001 - KICK(not stored)
+			0002 - MUTE
+			0003 - BAN
+			
+		
+	// *********************************************************
+	// ******************** Class Constants ********************
+	// *********************************************************	
+		
+	// *********************************************************
+	// ******************** Class Variables ********************
+	// *********************************************************
+	
+	// *********************************************************
+	// ******************** Constructors ***********************
+	// *********************************************************
+	
+	// *********************************************************
+	// ******************** Selectors **************************
+	// *********************************************************
+	
+	// *********************************************************
+	// ******************** Mutators ***************************
+	// *********************************************************
+	
+	
+	// *********************************************************
+	// ******************** GUI Components *********************
+	// *********************************************************		
+	
+	
+	// *********************************************************
+	// ******************** Utility Methods ********************
+	// *********************************************************
+		
