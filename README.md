@@ -89,7 +89,7 @@ LOGIN MESSAGE
 	0001 – LoginMessage – send the necessary login information, or response back
 
 REGULAR CHAT MESSAGES		(0100 - 0199)
-  0100 – ChatMessage – send a regular message to all
+  	0100 – ChatMessage – send a regular message to all
 					
 PRIVATE MESSAGES			(0200 - 0299)
 	0200 – PrivateChatMessage – send a private message
@@ -101,7 +101,7 @@ ADMIN MESSAGES			(0800 - 0899)
 	0800 – AdminLoginMessage – send the admin login info, or response back
 						
 	0809 – AdminPunishListMessage – send the list of punished users
-  0810 - AdminPunishMessage(set the punishment KICK,MUTE,BAN)
+  	0810 - AdminPunishMessage(set the punishment KICK,MUTE,BAN)
 	0811 – AdminPunishMessage(remove the punishment) 
 											
 SERVER MESSAGES			(0900 - 0999)
