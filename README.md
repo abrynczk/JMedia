@@ -160,7 +160,7 @@ The framework consists of:
     FileTransferTickets are kept within tables and lists in the main Client object and continually created, updated, or deleted based on their associated files’ transfer status.
 
     -	User – Container for basic user-oriented information including displayed username, mute status, and admin login success. 
-    A single instance is contained within the main client object
+    A single instance is contained within the main client object.
  
  
 
@@ -170,30 +170,35 @@ The media library splits up media data based upon media type, then stores and di
  
  
 The framework consists of:
-	
+
 	-  DataAccess – Class meant to communicate with the database, providing functionality to retrieve, save, update, and delete all provided data. 
 	
 	It creates 5 tables:
-	MUSIC		NAME		VARCHAR(250)
+	MUSIC		
+			NAME		VARCHAR(250)
 			ARTIST		VARCHAR(250)
 			ALBUM		VARCHAR(100)
-			LENGTH	BIGINT
+			LENGTH		BIGINT
 			GENRE		VARCHAR(50)
 			FILELOC		VARCHAR(500)		PRIMARY KEY
 	
-	VIDEO		NAME		VARCHAR(250)
-			LENGTH	BIGINT
+	VIDEO		
+			NAME		VARCHAR(250)
+			LENGTH		BIGINT
 			GENRE		VARCHAR(50)
 			FILELOC		VARCHAR(500)		PRIMARY KEY
 
-	PLAYLIST	PLNAME	VARCHAR(250)		PRIMARY KEY
+	PLAYLIST	
+			PLNAME		VARCHAR(250)		PRIMARY KEY
 			TYPE		VARCHAR(25)
 
-	MUSICPL		PLNAME	VARCHAR(250)		FOREIGN KEY ON PLAYLIST
+	MUSICPL		
+			PLNAME		VARCHAR(250)		FOREIGN KEY ON PLAYLIST
 			SONG		VARCHAR(250)
 			FILELOC		VARCHAR(500)		FOREIGN KEY ON MUSIC
 
-	VIDEOPL	PLNAME	VARCHAR(250)		FOREIGN KEY ON PLAYLIST
+	VIDEOPL	
+			PLNAME		VARCHAR(250)		FOREIGN KEY ON PLAYLIST
 			VIDEO		VARCHAR(250)
 			FILELOC		VARCHAR(500)		FOREIGN KEY ON VIDEO
 
@@ -206,7 +211,9 @@ The framework consists of:
 
 	-  Video – Specialized container for video based media. Holds additional genre data.
 
-	-  ObservablePlaylist – Specialized container for media items, adding the ability to easily move items up and down the list as desired for use in the “Now Playing” media list. Holds MediaItem objects in an ObservableList, allowing JavaFX components to bind to its contents to simplify the updating of visual elements.
+	-  ObservablePlaylist – Specialized container for media items, adding the ability to easily move items up and down the list as desired for use in the “Now Playing” media list. 
+	Holds MediaItem objects in an ObservableList, allowing JavaFX components to bind to its contents to simplify the updating of visual elements.
 
-	-  Library – Model for the media library, containing and managing the various lists of media and their contents, as well as media player types. Keeps track of the VLC directory path and processes the saving/loading of the file associated with keeping track of the location(once provided correctly by the user).
+	-  Library – Model for the media library, containing and managing the various lists of media and their contents, as well as media player types. 
+	Keeps track of the VLC directory path and processes the saving/loading of the file associated with keeping track of the location(once provided correctly by the user).
 
